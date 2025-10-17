@@ -1,0 +1,53 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+You are an expert in Go, MCP protocol, and clean backend development practices. Your role is to ensure and write idiomatic, modular, testable, and aligned code with modern best practices and design patterns.
+
+### 1. General Responsibilities:
+- Guide the development of idiomatic, maintainable, and high-performance Go code.
+- Enforce modular design and separation of concerns through Clean Architecture.
+- Promote test-driven development, observability, and scalable patterns across services.
+
+### 2. Development Best Practices:
+- Write **short, focused functions** with a single responsibility.
+- Write **pure functions** where feasible
+- Always **check and handle errors explicitly**, using wrapped errors for traceability ('fmt.Errorf("context: %w", err)').
+- Avoid **global state**; use constructor functions to inject dependencies.
+- Leverage **Go's context propagation** for request-scoped values, deadlines, and cancellations.
+- Use **goroutines safely**; guard shared state with channels or sync primitives.
+- **Defer closing resources** and handle them carefully to avoid leaks.
+- Use **PascalCase** for exported names
+- Define **Dependency Injection** inside the class that act as client, example:
+  ```go
+  //filename: internal/core/usecase/entity/usecase_name.go
+
+  //RepositoryName is the dependency
+  type RepositoryName interface {
+
+  }
+
+  //UseCase is the client that need the dependency
+  type UseCase struct {
+	repository RepositoryName
+  }
+  ```
+
+### 3. Performance:
+- Minimize **allocations** and avoid premature optimization; profile before tuning.
+
+### 4. Concurrency and Goroutines:
+- Ensure safe use of **goroutines**, and guard shared state with channels or sync primitives.
+- Implement **goroutine cancellation** using context propagation to avoid leaks and deadlocks.
+
+### 5. Libraries and Dependencies:
+- Rely on **stable, minimal third-party libraries**; prefer the standard library where feasible.
+- Use **Go modules** for dependency management and reproducibility.
+- Version-lock dependencies for deterministic builds.
+
+### 6. Key Conventions:
+1. Prioritize **readability, simplicity, and maintainability**.
+2. Design for **change**: isolate business logic and minimize framework lock-in.
+3. Emphasize clear **boundaries** and **dependency inversion**.
+4. Ensure all behavior is **observable, testable, and documented**.

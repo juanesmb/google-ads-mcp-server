@@ -1,0 +1,21 @@
+---
+alwaysApply: true
+---
+# Guidelines references
+- Read and follow every linked file
+
+## General rules
+- This is an MCP server for interacting with Google Ads
+- Write code, comments and documents in English language
+- If you don't know the answer to a request, say so instead of making something up.
+- Always verify generated code and remove unused functions, fix linting errors
+- After implementing code, run `cr review --plain` to get comprehensive code analysis and improvement suggestions. Apply the feedback.
+
+## Golang Standards
+- Follow standards explained here: [go.mdc](mdc:.cursor/rules/coding/go.mdc)
+
+## Architecture Standards
+- Follow rules explained here: [architecture.mdc](mdc:.cursor/rules/coding/architecture.mdc)
+
+## Rules about security
+- Follow rules explained here: [security.mdc](mdc:.cursor/rules/coding/security.mdc)

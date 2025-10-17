@@ -1,0 +1,51 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Security and Resilience Guidelines
+
+1. **Input Validation & Sanitization**
+- All input from external sources (HTTP, events, etc.) **must be validated and sanitized** in the tool layer.
+- Use libraries like `github.com/go-playground/validator` for struct validation.
+- Example:
+    ```go
+    import "github.com/go-playground/validator/v10"
+    var validate = validator.New()
+    if err := validate.Struct(req); err != nil {
+        // Return 400 Bad Request
+    }
+    ```
+- Sanitize all string inputs to prevent injection attacks (e.g., trim spaces, escape HTML if needed).
+
+2. **Secret Management & Environment Variables**
+- **Never commit sensitive data** (passwords, tokens, keys) to the codebase.
+- Use environment variables for all secrets and configuration.
+- Example:
+    ```go
+    dbPassword := os.Getenv("DB_PASSWORD")
+    if dbPassword == "" {
+        log.Fatal("DB_PASSWORD is required")
+    }
+    ```
+- Use secret managers (AWS Secrets Manager, Vault, etc.) for production secrets if possible.
+
+3. **Retries, Backoff, and Timeouts**
+- All external calls (HTTP, DB, KVS, MQ, etc.) **must implement retries with exponential backoff and timeouts**.
+
+4. **Secure Logging & Error Handling**
+- **Never log sensitive data** (PII, credentials, tokens).
+- Use structured logging and mask sensitive fields.
+- When returning errors to clients, avoid leaking internal details.
+
+5. **Dependency Management**
+- Keep all dependencies up to date.
+- Use tools like `go mod tidy` and `go list -m -u all` to check for updates.
+- Regularly scan for vulnerabilities (e.g., `govulncheck`).
+
+6. **Review Checklist**
+- [ ] Are all inputs validated and sanitized in the handler layer?
+- [ ] Are all secrets managed via environment variables or secret managers?
+- [ ] Are retries, backoff, and timeouts implemented for all external calls?
+- [ ] Is sensitive data excluded from logs and error messages?
+- [ ] Are dependencies up to date and scanned for vulnerabilities?

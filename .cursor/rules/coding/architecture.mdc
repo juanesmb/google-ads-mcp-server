@@ -1,0 +1,105 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+
+### 1. General rules
+- Apply **Clean Architecture** by structuring code into tools, usecase and infrastructure layers.
+- Use **domain-driven design** principles where applicable.
+- Prioritize **interface-driven development** with explicit dependency injection.
+- Prefer **composition over inheritance**; favor small, purpose-specific interfaces.
+- Ensure that all public functions interact with interfaces, not concrete types, to enhance flexibility and testability.
+
+### 2. Layer responsibilities
+- **Tools:** Handle external requests (STDIO or HTTP). No business logic.
+- **Usecase:** Application logic, orchestrates domain entities and services.
+- **Domain:** Pure business logic, entities, value objects, aggregates.
+- **Infrastructure:** Integrate with external technologies (KVS, MYSQL, BIGQUEUE, STREAMS, etc).
+
+### 3. Common Anti-Patterns
+- Do **not** put business logic in infrastructure or handlers.
+- Do **not** couple domain and infrastructure layers.
+- Do **not** expose infrastructure details within domain logic.
+- Do **not** couple usecases or domain to frameworks (e.g., do not import HTTP, DB, or ORM packages in domain/usecase).
+- Do **not** use global state; always inject dependencies.
+
+#### Example: Dependency Injection and Interface Usage
+```go
+// In usecase layer
+// AccountRepository is an interface defined in usecase or domain
+// The implementation is injected from adapters
+func NewCreateAccountUseCase(repo AccountRepository) *CreateAccountUseCase {
+    return &CreateAccountUseCase{repo: repo}
+}
+```
+
+### 5. Design Tools & Diagrams
+- Create diagrams when asked or when you think it is a good fit for the request.
+- Iterate and refine diagrams based on new user input or business changes.
+- Use Mermaid syntax if applicable.
+
+#### Sequence Diagram
+- Use only to explain interactions between components for a specific usecase.
+- Only include principal components to give a high-level view.
+- Detail the flow step by step.
+- **Example:**
+```mermaid
+sequenceDiagram
+    participant API
+    participant UseCase
+    participant Repo
+    API->>UseCase: CreateAccount(cmd)
+    UseCase->>Repo: Save(account)
+    Repo-->>UseCase: OK
+    UseCase-->>API: AccountCreated
+```
+
+#### Activity Diagram
+- Use when you have enough business context to express the flow.
+- Ask for business constraints and use them to construct the diagram.
+- **Example:**
+```mermaid
+flowchart TD
+    Start --> ValidateInput
+    ValidateInput -- valid --> CreateAccount
+    ValidateInput -- invalid --> Error
+    CreateAccount --> Persist
+    Persist --> Success
+    Error --> End
+    Success --> End
+    End
+```
+
+#### Component Diagrams (C4 Model)
+- Create using the C4 model.
+- Use C4 Context Level for a general vision if applicable.
+- Use C4 Containers Level or Components Level if applicable.
+- Avoid C4 Code Level.
+- Ask for more info if needed, be specific about the information you need.
+- **Example:**
+```mermaid
+C4Context
+    title System Context
+    Person(user, "User")
+    System_Boundary(s1, "Account Service") {
+      Container(api, "API", "Go", "Handles HTTP requests")
+      Container(usecase, "UseCase Layer", "Go", "Business application logic")
+      Container(domain, "Domain Layer", "Go", "Business entities and rules")
+      Container(adapter, "KVS Adapter", "Go", "Persistence integration")
+    }
+    user -> api: Uses
+    api -> usecase: Calls
+    usecase -> domain: Manipulates
+    usecase -> adapter: Persists
+```
+
+### 6. Architecture Review Checklist
+- [ ] Are responsibilities clearly separated by layer?
+- [ ] Are dependencies injected via interfaces?
+- [ ] Is there no business logic in adapters or entrypoints?
+- [ ] Are diagrams up to date and clear?
+- [ ] Are anti-patterns avoided (see above)?
+- [ ] Is the folder structure consistent with Clean Architecture?
+- [ ] Are interfaces and dependency injection used everywhere?
+- [ ] Is the domain layer free of infrastructure/framework dependencies?
