@@ -1,7 +1,7 @@
 ---
+trigger: model_decision
 description: 
 globs: 
-alwaysApply: false
 ---
 
 ### 1. General rules
@@ -34,7 +34,7 @@ func NewCreateAccountUseCase(repo AccountRepository) *CreateAccountUseCase {
 }
 ```
 
-### 4. Design Tools & Diagrams
+### 5. Design Tools & Diagrams
 - Create diagrams when asked or when you think it is a good fit for the request.
 - Iterate and refine diagrams based on new user input or business changes.
 - Use Mermaid syntax if applicable.
@@ -71,7 +71,30 @@ flowchart TD
     End
 ```
 
-### 5. Architecture Review Checklist
+#### Component Diagrams (C4 Model)
+- Create using the C4 model.
+- Use C4 Context Level for a general vision if applicable.
+- Use C4 Containers Level or Components Level if applicable.
+- Avoid C4 Code Level.
+- Ask for more info if needed, be specific about the information you need.
+- **Example:**
+```mermaid
+C4Context
+    title System Context
+    Person(user, "User")
+    System_Boundary(s1, "Account Service") {
+      Container(api, "API", "Go", "Handles HTTP requests")
+      Container(usecase, "UseCase Layer", "Go", "Business application logic")
+      Container(domain, "Domain Layer", "Go", "Business entities and rules")
+      Container(adapter, "KVS Adapter", "Go", "Persistence integration")
+    }
+    user -> api: Uses
+    api -> usecase: Calls
+    usecase -> domain: Manipulates
+    usecase -> adapter: Persists
+```
+
+### 6. Architecture Review Checklist
 - [ ] Are responsibilities clearly separated by layer?
 - [ ] Are dependencies injected via interfaces?
 - [ ] Is there no business logic in adapters or entrypoints?
