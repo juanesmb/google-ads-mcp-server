@@ -9,8 +9,6 @@ import (
 	"math"
 	"net/http"
 	"time"
-
-	"linkedin-mcp/internal/infrastructure/api"
 )
 
 type Config struct {
@@ -34,12 +32,12 @@ func DefaultConfig() *Config {
 	}
 }
 
-type httpClient struct {
+type Client struct {
 	client *http.Client
 	config *Config
 }
 
-func NewClient(config *Config) api.Client {
+func NewClient(config *Config) *Client {
 	if config == nil {
 		config = DefaultConfig()
 	}
@@ -48,33 +46,33 @@ func NewClient(config *Config) api.Client {
 		Timeout: config.Timeout,
 	}
 
-	return &httpClient{
+	return &Client{
 		client: client,
 		config: config,
 	}
 }
 
-func (c *httpClient) Get(ctx context.Context, url string, headers map[string]string) (*api.Response, error) {
+func (c *Client) Get(ctx context.Context, url string, headers map[string]string) (*Response, error) {
 	return c.doRequest(ctx, http.MethodGet, url, nil, headers)
 }
 
-func (c *httpClient) Post(ctx context.Context, url string, body interface{}, headers map[string]string) (*api.Response, error) {
+func (c *Client) Post(ctx context.Context, url string, body interface{}, headers map[string]string) (*Response, error) {
 	return c.doRequest(ctx, http.MethodPost, url, body, headers)
 }
 
-func (c *httpClient) Put(ctx context.Context, url string, body interface{}, headers map[string]string) (*api.Response, error) {
+func (c *Client) Put(ctx context.Context, url string, body interface{}, headers map[string]string) (*Response, error) {
 	return c.doRequest(ctx, http.MethodPut, url, body, headers)
 }
 
-func (c *httpClient) Delete(ctx context.Context, url string, headers map[string]string) (*api.Response, error) {
+func (c *Client) Delete(ctx context.Context, url string, headers map[string]string) (*Response, error) {
 	return c.doRequest(ctx, http.MethodDelete, url, nil, headers)
 }
 
-func (c *httpClient) Patch(ctx context.Context, url string, body interface{}, headers map[string]string) (*api.Response, error) {
+func (c *Client) Patch(ctx context.Context, url string, body interface{}, headers map[string]string) (*Response, error) {
 	return c.doRequest(ctx, http.MethodPatch, url, body, headers)
 }
 
-func (c *httpClient) doRequest(ctx context.Context, method, url string, body interface{}, headers map[string]string) (*api.Response, error) {
+func (c *Client) doRequest(ctx context.Context, method, url string, body interface{}, headers map[string]string) (*Response, error) {
 	var lastErr error
 
 	for attempt := 0; attempt <= c.config.MaxRetries; attempt++ {
@@ -126,7 +124,7 @@ func (c *httpClient) doRequest(ctx context.Context, method, url string, body int
 			continue
 		}
 
-		return &api.Response{
+		return &Response{
 			StatusCode: resp.StatusCode,
 			Headers:    resp.Header,
 			Body:       responseBody,
@@ -136,7 +134,7 @@ func (c *httpClient) doRequest(ctx context.Context, method, url string, body int
 	return nil, fmt.Errorf("max retries exceeded: %w", lastErr)
 }
 
-func (c *httpClient) setHeaders(req *http.Request, headers map[string]string) {
+func (c *Client) setHeaders(req *http.Request, headers map[string]string) {
 	for key, value := range c.config.DefaultHeaders {
 		req.Header.Set(key, value)
 	}
@@ -152,11 +150,11 @@ func (c *httpClient) setHeaders(req *http.Request, headers map[string]string) {
 	}
 }
 
-func (c *httpClient) shouldRetry(statusCode int) bool {
+func (c *Client) shouldRetry(statusCode int) bool {
 	return statusCode >= 500 || statusCode == 429 || statusCode == 408
 }
 
-func (c *httpClient) waitBeforeRetry(attempt int) {
+func (c *Client) waitBeforeRetry(attempt int) {
 	delay := time.Duration(float64(c.config.RetryDelay) * math.Pow(2, float64(attempt)))
 	if delay > c.config.MaxRetryDelay {
 		delay = c.config.MaxRetryDelay
