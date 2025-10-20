@@ -1,6 +1,5 @@
 ---
-description: 
-globs: 
+description: Security rules. Apply when designing and implementing code
 alwaysApply: false
 ---
 # Security and Resilience Guidelines

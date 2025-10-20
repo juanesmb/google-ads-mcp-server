@@ -1,9 +1,7 @@
 ---
-description: 
-globs: 
+description: Software architecture good practices. Apply when designing and implementing software
 alwaysApply: false
 ---
-
 ### 1. General rules
 - Apply **Clean Architecture** by structuring code into tools, usecase and infrastructure layers.
 - Use **domain-driven design** principles where applicable.
