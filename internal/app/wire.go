@@ -1,6 +1,11 @@
 package app
 
 import (
+	repo "google-ads-mcp/internal/infrastructure/api/listadaccounts"
+	"google-ads-mcp/internal/infrastructure/http"
+	"google-ads-mcp/internal/infrastructure/log/local"
+	"google-ads-mcp/internal/tools/listadaccounts"
+
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
@@ -12,7 +17,20 @@ func initServer(configs Configs) *mcp.Server {
 
 	server := mcp.NewServer(implementation, options)
 
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "list_ad_accounts",
+		Description: "List Google Ads accounts",
+	}, initListAdAccountsTool(configs).ListAdAccounts)
+
 	return server
+}
+
+func initListAdAccountsTool(configs Configs) *listadaccounts.Tool {
+	httpClient := http.NewClient(nil)
+	logger := local.NewLogger()
+	service := repo.NewService(httpClient, logger, configs.GoogleAdsConfig.CustomerID, configs.GoogleAdsConfig.DeveloperToken)
+
+	return listadaccounts.NewListAdAccountsTool(service)
 }
 
 func initImplementation() *mcp.Implementation {

@@ -7,13 +7,22 @@ import (
 )
 
 type Configs struct {
-	ServerConfig ServerConfig
+	ServerConfig    ServerConfig
+	GoogleAdsConfig GoogleAdsConfig
 }
 
 type ServerConfig struct {
 	BindAddress string
 	Port        string
 	Path        string
+}
+
+type GoogleAdsConfig struct {
+	CustomerID     string
+	DeveloperToken string
+	ClientID       string
+	PrivateKeyID   string
+	PrivateKey     string
 }
 
 func readConfigs() Configs {
@@ -41,6 +50,13 @@ func readConfigs() Configs {
 			BindAddress: bindAddress,
 			Port:        port,
 			Path:        path,
+		},
+		GoogleAdsConfig: GoogleAdsConfig{
+			CustomerID:     os.Getenv("GOOGLE_ADS_CUSTOMER_ID"),
+			DeveloperToken: os.Getenv("GOOGLE_ADS_DEVELOPER_TOKEN"),
+			ClientID:       os.Getenv("GOOGLE_ADS_CLIENT_ID"),
+			PrivateKeyID:   os.Getenv("GOOGLE_ADS_PRIVATE_KEY_ID"),
+			PrivateKey:     os.Getenv("GOOGLE_ADS_PRIVATE_KEY"),
 		},
 	}
 }
