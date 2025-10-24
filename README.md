@@ -69,15 +69,15 @@ To get a service account for Google Ads API:
    gcloud secrets create GOOGLE_ADS_CONFIG \
      --data-file=google-ads-config.json \
      --project=your-project-id
-   
-   # Grant access to the secret (if needed)
-   gcloud secrets add-iam-policy-binding GOOGLE_ADS_CONFIG \
-     --member="serviceAccount:your-service-account@your-project-id.iam.gserviceaccount.com" \
-     --role="roles/secretmanager.secretAccessor" \
-     --project=your-project-id
    ```
 
-2. **Environment Variables**:
+2. **Configure Secret Environment Variable**:
+   ```bash
+   # In Google Cloud Run/Cloud Functions, configure GOOGLE_ADS_CONFIG as a secret environment variable
+   # Google Cloud will automatically populate the environment variable with the secret value
+   ```
+
+3. **Environment Variables**:
    ```bash
    # Required for production
    export GOOGLE_CLOUD_PROJECT="your-project-id"
@@ -88,12 +88,12 @@ To get a service account for Google Ads API:
    export PORT="8080"
    ```
 
-3. **Service Account Permissions**:
+4. **Service Account Permissions**:
    Ensure your service account has the following permissions:
-    - `roles/secretmanager.secretAccessor` - to read the secret
     - `roles/ads.readonly` or appropriate Google Ads API permissions
+    - Access to the GOOGLE_ADS_CONFIG secret (automatically handled by Google Cloud)
 
-4. **Deploy**:
+5. **Deploy**:
    The server will automatically detect the environment and use the appropriate credential source.
 
 ## Architecture
@@ -115,9 +115,9 @@ The application automatically detects the environment:
     - No Google Cloud configuration required
 
 2. **Production**:
-    - If local config file doesn't exist, falls back to Google Secret Manager
-    - Reads `GOOGLE_ADS_CONFIG` secret containing unified configuration
-    - Requires `GOOGLE_CLOUD_PROJECT` environment variable
+    - If local config file doesn't exist, falls back to environment variable
+    - Reads `GOOGLE_ADS_CONFIG` environment variable (automatically populated by Google Cloud)
+    - Google Cloud Run/Cloud Functions automatically injects secret values into environment variables
 
 ## Security
 
