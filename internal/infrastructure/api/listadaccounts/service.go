@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"strings"
 
+	"google-ads-mcp/internal/infrastructure/auth"
 	infrahttp "google-ads-mcp/internal/infrastructure/http"
 	"google-ads-mcp/internal/infrastructure/log"
 
@@ -22,12 +23,13 @@ const (
 type Service struct {
 	client         *infrahttp.Client
 	logger         log.Logger
+	tokenManager   auth.TokenProvider
 	endpoint       string
 	developerToken string
 	customerID     string
 }
 
-func NewService(client *infrahttp.Client, logger log.Logger, customerID, developerToken string) *Service {
+func NewService(client *infrahttp.Client, logger log.Logger, tokenManager auth.TokenProvider, customerID, developerToken string) *Service {
 	baseURL, _ := url.Parse(defaultBaseURL)
 	version := strings.TrimPrefix(strings.TrimSpace(defaultAPIVersion), "/")
 	path := strings.TrimSuffix(baseURL.Path, "/")
@@ -37,6 +39,7 @@ func NewService(client *infrahttp.Client, logger log.Logger, customerID, develop
 	return &Service{
 		client:         client,
 		logger:         logger,
+		tokenManager:   tokenManager,
 		endpoint:       baseURL.String(),
 		developerToken: developerToken,
 		customerID:     customerID,
@@ -53,9 +56,14 @@ func (s *Service) ListAccounts(ctx context.Context, filters Filters) (Result, er
 		Query: query,
 	}
 
+	accessToken, err := s.tokenManager.GetAccessToken(ctx)
+	if err != nil {
+		return Result{}, fmt.Errorf("listadaccounts: failed to get access token: %w", err)
+	}
+
 	headers := map[string]string{
 		"Content-Type":    "application/json",
-		"Authorization":   "Bearer " + "accessToken",
+		"Authorization":   "Bearer " + accessToken,
 		"developer-token": s.developerToken,
 	}
 

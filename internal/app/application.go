@@ -10,31 +10,32 @@ import (
 	"syscall"
 	"time"
 
+	"google-ads-mcp/internal/app/configs"
 	"google-ads-mcp/internal/infrastructure/middleware"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
 func Start() {
-	configs := readConfigs()
+	cfgs := configs.ReadConfigs()
 
-	server := initServer(configs)
+	server := initServer(cfgs)
 
 	handler := mcp.NewStreamableHTTPHandler(func(r *http.Request) *mcp.Server {
 		return server
 	}, &mcp.StreamableHTTPOptions{JSONResponse: true})
 
 	mux := http.NewServeMux()
-	mux.Handle(configs.ServerConfig.Path, handler)
+	mux.Handle(cfgs.ServerConfig.Path, handler)
 
 	wrappedHandler := middleware.LoggingHandler(mux)
 
 	httpServer := &http.Server{
-		Addr:    configs.ServerConfig.BindAddress,
+		Addr:    cfgs.ServerConfig.BindAddress,
 		Handler: wrappedHandler,
 	}
 
-	log.Printf("Google Ads MCP server (streamable HTTP) listening on path %s (bind %s)", configs.ServerConfig.Path, configs.ServerConfig.BindAddress)
+	log.Printf("Google Ads MCP server (streamable HTTP) listening on path %s (bind %s)", cfgs.ServerConfig.Path, cfgs.ServerConfig.BindAddress)
 
 	shutdownCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
