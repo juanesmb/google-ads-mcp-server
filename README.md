@@ -37,20 +37,20 @@ To get a service account for Google Ads API:
 
 ### Local Development Setup
 
-1. **Place Service Account JSON File**:
+1. **Create Unified Configuration File**:
    ```bash
-   # Copy your service account JSON file to the configs directory
-   # Replace 'your-service-account.json' with your actual service account filename
-   cp your-service-account.json internal/app/configs/
+   # Create the unified configuration file
+   cp internal/app/configs/google-ads-config.json.example internal/app/configs/google-ads-config.json
+   
+   # Edit the file with your actual values:
+   # - customer_id: Your Google Ads customer ID
+   # - developer_token: Your Google Ads developer token
+   # - service_account_json: Your complete service account JSON as a string
    ```
 
-2. **Set Environment Variables**:
+2. **Set Environment Variables** (Optional - Non-sensitive):
    ```bash
-   # Required - Replace with your actual values
-   export GOOGLE_ADS_CUSTOMER_ID="your-customer-id"
-   export GOOGLE_ADS_DEVELOPER_TOKEN="your-developer-token"
-   
-   # Optional (with defaults)
+   # Optional server configuration (with defaults)
    export MCP_SERVER_HOST="0.0.0.0"
    export MCP_SERVER_PATH="/mcp"
    export PORT="8080"
@@ -65,13 +65,13 @@ To get a service account for Google Ads API:
 
 1. **Google Secret Manager Setup**:
    ```bash
-   # Create the secret (replace with your service account JSON file)
-   gcloud secrets create GOOGLE_ADS_SERVICE_ACCOUNT_JSON \
-     --data-file=your-service-account.json \
+   # Create the unified configuration secret
+   gcloud secrets create GOOGLE_ADS_CONFIG \
+     --data-file=google-ads-config.json \
      --project=your-project-id
    
    # Grant access to the secret (if needed)
-   gcloud secrets add-iam-policy-binding GOOGLE_ADS_SERVICE_ACCOUNT_JSON \
+   gcloud secrets add-iam-policy-binding GOOGLE_ADS_CONFIG \
      --member="serviceAccount:your-service-account@your-project-id.iam.gserviceaccount.com" \
      --role="roles/secretmanager.secretAccessor" \
      --project=your-project-id
@@ -79,12 +79,10 @@ To get a service account for Google Ads API:
 
 2. **Environment Variables**:
    ```bash
-   # Required - Replace with your actual values
-   export GOOGLE_ADS_CUSTOMER_ID="your-customer-id"
-   export GOOGLE_ADS_DEVELOPER_TOKEN="your-developer-token"
+   # Required for production
    export GOOGLE_CLOUD_PROJECT="your-project-id"
    
-   # Optional (with defaults)
+   # Optional server configuration (with defaults)
    export MCP_SERVER_HOST="0.0.0.0"
    export MCP_SERVER_PATH="/mcp"
    export PORT="8080"
@@ -111,19 +109,21 @@ To get a service account for Google Ads API:
 The application automatically detects the environment:
 
 1. **Local Development**:
-    - Looks for your service account JSON file in `internal/app/configs/`
-    - If found, reads the service account JSON from the local file
+    - Looks for `internal/app/configs/google-ads-config.json`
+    - If found, reads the unified configuration from the local file
+    - Contains all Google Ads API credentials (customer_id, developer_token, service_account_json)
     - No Google Cloud configuration required
 
 2. **Production**:
-    - If local file doesn't exist, falls back to Google Secret Manager
-    - Reads `GOOGLE_ADS_SERVICE_ACCOUNT_JSON` secret
+    - If local config file doesn't exist, falls back to Google Secret Manager
+    - Reads `GOOGLE_ADS_CONFIG` secret containing unified configuration
     - Requires `GOOGLE_CLOUD_PROJECT` environment variable
 
 ## Security
 
-- **Local Development**: Service account JSON stored in local file (excluded from git)
-- **Production**: Service account credentials stored securely in Google Secret Manager
-- No sensitive data in environment variables or committed code
+- **Local Development**: All Google Ads credentials stored in local config file (excluded from git)
+- **Production**: All Google Ads credentials stored securely in Google Secret Manager
+- **Environment Variables**: Only non-sensitive server configuration (PORT, HOST, PATH)
+- **Unified Configuration**: Single source of truth for all Google Ads API credentials
 - Automatic token refresh with proper caching
 - Thread-safe token management

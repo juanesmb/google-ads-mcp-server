@@ -1,0 +1,5 @@
+{
+  "customer_id": "your-customer-id",
+  "developer_token": "your-developer-token",
+  "service_account_json": "{\n  \"type\": \"service_account\",\n  \"project_id\": \"your-project-id\",\n  \"private_key_id\": \"your-private-key-id\",\n  \"private_key\": \"-----BEGIN PRIVATE KEY-----\\nYOUR_PRIVATE_KEY_HERE\\n-----END PRIVATE KEY-----\\n\",\n  \"client_email\": \"your-service-account@your-project-id.iam.gserviceaccount.com\",\n  \"client_id\": \"your-client-id\",\n  \"auth_uri\": \"https://accounts.google.com/o/oauth2/auth\",\n  \"token_uri\": \"https://oauth2.googleapis.com/token\",\n  \"auth_provider_x509_cert_url\": \"https://www.googleapis.com/oauth2/v1/certs\",\n  \"client_x509_cert_url\": \"https://www.googleapis.com/robot/v1/metadata/x509/your-service-account%40your-project-id.iam.gserviceaccount.com\",\n  \"universe_domain\": \"googleapis.com\"\n}"
+}

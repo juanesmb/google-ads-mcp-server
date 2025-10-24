@@ -2,8 +2,8 @@ package configs
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 
@@ -28,7 +28,15 @@ type GoogleAdsConfig struct {
 	ServiceAccountJSON string
 }
 
+// GoogleAdsConfigData represents the unified configuration structure
+type GoogleAdsConfigData struct {
+	CustomerID         string `json:"customer_id"`
+	DeveloperToken     string `json:"developer_token"`
+	ServiceAccountJSON string `json:"service_account_json"`
+}
+
 func ReadConfigs() Configs {
+	// Non-sensitive server configuration from environment variables
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
@@ -48,10 +56,10 @@ func ReadConfigs() Configs {
 
 	bindAddress := fmt.Sprintf("%s:%s", host, port)
 
-	// Read service account JSON - try local file first, then Google Secret Manager
-	serviceAccountJSON, err := readServiceAccountJSON()
+	// Read unified Google Ads configuration - try local file first, then Google Secret Manager
+	googleAdsConfig, err := readGoogleAdsConfig()
 	if err != nil {
-		panic(fmt.Sprintf("failed to read service account JSON: %v", err))
+		panic(fmt.Sprintf("failed to read Google Ads configuration: %v", err))
 	}
 
 	return Configs{
@@ -60,55 +68,49 @@ func ReadConfigs() Configs {
 			Port:        port,
 			Path:        path,
 		},
-		GoogleAdsConfig: GoogleAdsConfig{
-			CustomerID:         os.Getenv("GOOGLE_ADS_CUSTOMER_ID"),
-			DeveloperToken:     os.Getenv("GOOGLE_ADS_DEVELOPER_TOKEN"),
-			ServiceAccountJSON: serviceAccountJSON,
-		},
+		GoogleAdsConfig: googleAdsConfig,
 	}
 }
 
-// readServiceAccountJSON reads service account JSON from local file or Google Secret Manager
-func readServiceAccountJSON() (string, error) {
-	// First, try to read from local file (for local development)
-	// Look for any JSON file in the configs directory
-	configDir := "internal/app/configs"
-	files, err := ioutil.ReadDir(configDir)
-	if err == nil {
-		for _, file := range files {
-			if strings.HasSuffix(file.Name(), ".json") {
-				localFilePath := fmt.Sprintf("%s/%s", configDir, file.Name())
-				data, err := ioutil.ReadFile(localFilePath)
-				if err != nil {
-					continue // Try next file
-				}
-				return string(data), nil
-			}
+// readGoogleAdsConfig reads unified Google Ads configuration from local file or Google Secret Manager
+func readGoogleAdsConfig() (GoogleAdsConfig, error) {
+	localConfigPath := "internal/app/configs/google-ads-config.json"
+	if _, err := os.Stat(localConfigPath); err == nil {
+		data, err := os.ReadFile(localConfigPath)
+		if err != nil {
+			return GoogleAdsConfig{}, fmt.Errorf("failed to read local config file: %w", err)
 		}
+
+		var configData GoogleAdsConfigData
+		if err := json.Unmarshal(data, &configData); err != nil {
+			return GoogleAdsConfig{}, fmt.Errorf("failed to parse local config JSON: %w", err)
+		}
+
+		return GoogleAdsConfig(configData), nil
 	}
 
-	// If no local JSON file found, try Google Secret Manager (for production)
-	return readSecretFromManager("GOOGLE_ADS_SERVICE_ACCOUNT_JSON")
+	// If no local config file found, try Google Secret Manager (for production)
+	return readGoogleAdsConfigFromSecretManager()
 }
 
-// readSecretFromManager reads a secret from Google Secret Manager
-func readSecretFromManager(secretName string) (string, error) {
-	// Get the project ID from environment or use default
+// readGoogleAdsConfigFromSecretManager reads unified Google Ads configuration from Google Secret Manager
+func readGoogleAdsConfigFromSecretManager() (GoogleAdsConfig, error) {
+	// Get the project ID from environment
 	projectID := os.Getenv("GOOGLE_CLOUD_PROJECT")
 	if projectID == "" {
-		projectID = "understory-mcps" // Default project ID
+		return GoogleAdsConfig{}, fmt.Errorf("GOOGLE_CLOUD_PROJECT environment variable is required for production")
 	}
 
 	// Create the secret manager client
 	ctx := context.Background()
 	client, err := secretmanager.NewClient(ctx)
 	if err != nil {
-		return "", fmt.Errorf("failed to create secret manager client: %w", err)
+		return GoogleAdsConfig{}, fmt.Errorf("failed to create secret manager client: %w", err)
 	}
 	defer client.Close()
 
 	// Build the secret name
-	secretPath := fmt.Sprintf("projects/%s/secrets/%s/versions/latest", projectID, secretName)
+	secretPath := fmt.Sprintf("projects/%s/secrets/GOOGLE_ADS_CONFIG/versions/latest", projectID)
 
 	// Access the secret
 	req := &secretmanagerpb.AccessSecretVersionRequest{
@@ -117,8 +119,14 @@ func readSecretFromManager(secretName string) (string, error) {
 
 	result, err := client.AccessSecretVersion(ctx, req)
 	if err != nil {
-		return "", fmt.Errorf("failed to access secret %s: %w", secretName, err)
+		return GoogleAdsConfig{}, fmt.Errorf("failed to access GOOGLE_ADS_CONFIG secret: %w", err)
 	}
 
-	return string(result.Payload.Data), nil
+	// Parse the JSON configuration
+	var configData GoogleAdsConfigData
+	if err := json.Unmarshal(result.Payload.Data, &configData); err != nil {
+		return GoogleAdsConfig{}, fmt.Errorf("failed to parse Google Ads config JSON: %w", err)
+	}
+
+	return GoogleAdsConfig(configData), nil
 }
