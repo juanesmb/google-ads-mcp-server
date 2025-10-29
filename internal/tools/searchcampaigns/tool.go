@@ -80,15 +80,27 @@ func mapCampaigns(campaigns []searchcampaigns.Campaign) []CampaignOutput {
 			BudgetAmountMicros:     camp.BudgetAmountMicros,
 			OptimizationScore:      camp.OptimizationScore,
 			Metrics: CampaignMetrics{
-				Clicks:      camp.Metrics.Clicks,
-				Impressions: camp.Metrics.Impressions,
-				CTR:         camp.Metrics.CTR,
-				AverageCPC:  camp.Metrics.AverageCPC,
-				CostMicros:  camp.Metrics.CostMicros,
+				Clicks:                             camp.Metrics.Clicks,
+				Impressions:                        camp.Metrics.Impressions,
+				CTR:                                camp.Metrics.CTR,
+				AverageCPC:                         camp.Metrics.AverageCPC,
+				CostMicros:                         camp.Metrics.CostMicros,
+				Conversions:                        camp.Metrics.Conversions,
+				ConversionsValue:                   camp.Metrics.ConversionsValue,
+				CostPerConversion:                  camp.Metrics.CostPerConversion,
+				ConversionRate:                     camp.Metrics.ConversionRate,
+				AllConversions:                     camp.Metrics.AllConversions,
+				AllConversionsValue:                camp.Metrics.AllConversionsValue,
+				AllConversionsFromInteractionsRate: camp.Metrics.AllConversionsFromInteractionsRate,
+				AllConversionsValuePerCost:         camp.Metrics.AllConversionsValuePerCost,
+				CostPerAllConversions:              camp.Metrics.CostPerAllConversions,
+				Interactions:                       camp.Metrics.Interactions,
+				EngagementRate:                     camp.Metrics.EngagementRate,
+				SearchImpressionShare:              camp.Metrics.SearchImpressionShare,
+				SearchRankLostImpressionShare:      camp.Metrics.SearchRankLostImpressionShare,
 			},
 		})
 	}
 
 	return normalized
 }
-

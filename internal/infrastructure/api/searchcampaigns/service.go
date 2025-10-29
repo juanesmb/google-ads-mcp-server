@@ -22,19 +22,19 @@ const (
 )
 
 type Service struct {
-	client         *infrahttp.Client
-	logger         log.Logger
-	tokenManager   auth.TokenProvider
-	developerToken string
+	client          *infrahttp.Client
+	logger          log.Logger
+	tokenManager    auth.TokenProvider
+	developerToken  string
 	loginCustomerID string
 }
 
 func NewService(client *infrahttp.Client, logger log.Logger, tokenManager auth.TokenProvider, loginCustomerID, developerToken string) *Service {
 	return &Service{
-		client:         client,
-		logger:         logger,
-		tokenManager:   tokenManager,
-		developerToken: developerToken,
+		client:          client,
+		logger:          logger,
+		tokenManager:    tokenManager,
+		developerToken:  developerToken,
 		loginCustomerID: loginCustomerID,
 	}
 }
@@ -61,9 +61,9 @@ func (s *Service) SearchCampaigns(ctx context.Context, filters Filters) (Result,
 	}
 
 	headers := map[string]string{
-		"Content-Type":     "application/json",
-		"Authorization":    "Bearer " + accessToken,
-		"developer-token":  s.developerToken,
+		"Content-Type":      "application/json",
+		"Authorization":     "Bearer " + accessToken,
+		"developer-token":   s.developerToken,
 		"login-customer-id": s.loginCustomerID,
 	}
 
@@ -106,7 +106,7 @@ func (s *Service) buildEndpoint(customerID string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	
+
 	// Validate customer ID format (should be numeric)
 	customerID = strings.TrimSpace(customerID)
 	if customerID == "" {
@@ -115,7 +115,7 @@ func (s *Service) buildEndpoint(customerID string) (string, error) {
 
 	// Remove any "customers/" prefix if present
 	customerID = strings.TrimPrefix(customerID, "customers/")
-	
+
 	version := strings.TrimPrefix(strings.TrimSpace(defaultAPIVersion), "/")
 	path := strings.TrimSuffix(baseURL.Path, "/")
 	path = fmt.Sprintf("%s/%s/customers/%s/googleAds:search", path, version, customerID)
@@ -140,6 +140,18 @@ func (s *Service) buildQuery(filters Filters) (string, error) {
 		"metrics.ctr",
 		"metrics.average_cpc",
 		"metrics.cost_micros",
+		"metrics.conversions",
+		"metrics.conversions_value",
+		"metrics.cost_per_conversion",
+		"metrics.all_conversions",
+		"metrics.all_conversions_value",
+		"metrics.all_conversions_from_interactions_rate",
+		"metrics.all_conversions_value_per_cost",
+		"metrics.cost_per_all_conversions",
+		"metrics.interactions",
+		"metrics.engagement_rate",
+		"metrics.search_impression_share",
+		"metrics.search_rank_lost_impression_share",
 	}
 
 	qb := gaql.NewQueryBuilder("campaign").Select(fields...)
@@ -205,15 +217,39 @@ func (s *Service) mapRowToCampaign(row *services.GoogleAdsRow) *Campaign {
 		optimizationScore = optScore
 	}
 
-	var clicks, impressions int64
+	var clicks, impressions, interactions int64
 	var ctr, averageCPC float64
 	var costMicros int64
+	var conversions, conversionsValue, costPerConversion float64
+	var allConversions, allConversionsValue, allConversionsFromInteractionsRate float64
+	var allConversionsValuePerCost, costPerAllConversions float64
+	var engagementRate, searchImpressionShare, searchRankLostImpressionShare float64
+
 	if metricsResource != nil {
 		clicks = metricsResource.GetClicks()
 		impressions = metricsResource.GetImpressions()
 		ctr = metricsResource.GetCtr()
 		averageCPC = metricsResource.GetAverageCpc()
 		costMicros = metricsResource.GetCostMicros()
+		conversions = metricsResource.GetConversions()
+		conversionsValue = metricsResource.GetConversionsValue()
+		costPerConversion = metricsResource.GetCostPerConversion()
+		// ConversionRate is calculated: conversions / clicks * 100 (if clicks > 0)
+		allConversions = metricsResource.GetAllConversions()
+		allConversionsValue = metricsResource.GetAllConversionsValue()
+		allConversionsFromInteractionsRate = metricsResource.GetAllConversionsFromInteractionsRate()
+		allConversionsValuePerCost = metricsResource.GetAllConversionsValuePerCost()
+		costPerAllConversions = metricsResource.GetCostPerAllConversions()
+		interactions = metricsResource.GetInteractions()
+		engagementRate = metricsResource.GetEngagementRate()
+		searchImpressionShare = metricsResource.GetSearchImpressionShare()
+		searchRankLostImpressionShare = metricsResource.GetSearchRankLostImpressionShare()
+	}
+
+	// Calculate conversion rate from conversions and clicks
+	var conversionRate float64
+	if clicks > 0 {
+		conversionRate = (conversions / float64(clicks)) * 100.0
 	}
 
 	return &Campaign{
@@ -226,11 +262,24 @@ func (s *Service) mapRowToCampaign(row *services.GoogleAdsRow) *Campaign {
 		BudgetAmountMicros:     budgetAmountMicros,
 		OptimizationScore:      optimizationScore,
 		Metrics: CampaignMetrics{
-			Clicks:      clicks,
-			Impressions: impressions,
-			CTR:         ctr,
-			AverageCPC:  int64(averageCPC * 1000000), // Convert to micros
-			CostMicros:  costMicros,
+			Clicks:                             clicks,
+			Impressions:                        impressions,
+			CTR:                                ctr,
+			AverageCPC:                         int64(averageCPC * 1000000), // Convert to micros
+			CostMicros:                         costMicros,
+			Conversions:                        conversions,
+			ConversionsValue:                   conversionsValue,
+			CostPerConversion:                  costPerConversion,
+			ConversionRate:                     conversionRate,
+			AllConversions:                     allConversions,
+			AllConversionsValue:                allConversionsValue,
+			AllConversionsFromInteractionsRate: allConversionsFromInteractionsRate,
+			AllConversionsValuePerCost:         allConversionsValuePerCost,
+			CostPerAllConversions:              costPerAllConversions,
+			Interactions:                       interactions,
+			EngagementRate:                     engagementRate,
+			SearchImpressionShare:              searchImpressionShare,
+			SearchRankLostImpressionShare:      searchRankLostImpressionShare,
 		},
 	}
 }
@@ -251,4 +300,3 @@ func getHeaderValue(headers map[string][]string, key string) string {
 	}
 	return ""
 }
-
