@@ -339,3 +339,145 @@ func (qb *QueryBuilder) WhereDateRange(start, end string) error {
 	return nil
 }
 
+// WhereAdGroupIDs adds a WHERE clause to filter by ad group IDs
+// Ad group IDs should be numeric only (e.g., "123456789")
+func (qb *QueryBuilder) WhereAdGroupIDs(ids []string) error {
+	if len(ids) == 0 {
+		return nil
+	}
+
+	normalized := make([]string, 0, len(ids))
+	for _, rawID := range ids {
+		trimmed := strings.TrimSpace(rawID)
+		if trimmed == "" {
+			continue
+		}
+
+		// Extract numeric part from resource name format if present
+		// e.g., "customers/123456789/adGroups/987654321" -> "987654321"
+		var numericID string
+		if strings.Contains(trimmed, "/adGroups/") {
+			parts := strings.Split(trimmed, "/adGroups/")
+			if len(parts) == 2 {
+				numericID = strings.TrimSpace(parts[1])
+			} else {
+				return fmt.Errorf("ad group ID %q is invalid: expected format 'customers/XXX/adGroups/YYY' or numeric ID", rawID)
+			}
+		} else {
+			numericID = trimmed
+		}
+
+		// Remove dashes and validate that the ID contains only digits
+		sanitized := strings.ReplaceAll(numericID, "-", "")
+		if !digitsOnlyRegex.MatchString(sanitized) {
+			return fmt.Errorf("ad group ID %q is invalid: must be numeric", rawID)
+		}
+
+		normalized = append(normalized, sanitized)
+	}
+
+	if len(normalized) == 0 {
+		return nil
+	}
+
+	// Deduplicate IDs to avoid GAQL rejections.
+	seen := make(map[string]bool)
+	var unique []string
+	for _, id := range normalized {
+		if !seen[id] {
+			seen[id] = true
+			unique = append(unique, id)
+		}
+	}
+
+	// Build IN clause with ad group IDs
+	if len(unique) == 1 {
+		qb.Where(fmt.Sprintf("ad_group.id = %s", unique[0]))
+	} else {
+		qb.Where(fmt.Sprintf("ad_group.id IN (%s)", strings.Join(unique, ",")))
+	}
+	return nil
+}
+
+// WhereAdGroupNames adds a WHERE clause to filter by ad group names
+func (qb *QueryBuilder) WhereAdGroupNames(names []string) {
+	if len(names) == 0 {
+		return
+	}
+
+	var expressions []string
+	for _, name := range names {
+		trimmed := strings.TrimSpace(name)
+		if trimmed == "" {
+			continue
+		}
+
+		escaped := strings.ToLower(trimmed)
+		escaped = strings.ReplaceAll(escaped, "\\", "\\\\")
+		escaped = strings.ReplaceAll(escaped, "'", "''")
+		escaped = strings.ReplaceAll(escaped, "%", "\\%")
+		escaped = strings.ReplaceAll(escaped, "_", "\\_")
+
+		expressions = append(expressions, fmt.Sprintf("ad_group.name LIKE '%%%s%%'", escaped))
+	}
+
+	if len(expressions) == 0 {
+		return
+	}
+
+	if len(expressions) == 1 {
+		qb.Where(expressions[0])
+	} else {
+		qb.Where(strings.Join(expressions, " OR "))
+	}
+}
+
+// WhereAdGroupStatus adds a WHERE clause to filter by ad group status
+// Valid statuses: ENABLED, PAUSED, REMOVED
+func (qb *QueryBuilder) WhereAdGroupStatus(statuses []string) error {
+	if len(statuses) == 0 {
+		return nil
+	}
+
+	validStatuses := map[string]bool{
+		"ENABLED": true,
+		"PAUSED":  true,
+		"REMOVED": true,
+	}
+
+	normalized := make([]string, 0, len(statuses))
+	for _, status := range statuses {
+		trimmed := strings.TrimSpace(strings.ToUpper(status))
+		if trimmed == "" {
+			continue
+		}
+
+		if !validStatuses[trimmed] {
+			return fmt.Errorf("invalid ad group status %q: must be one of ENABLED, PAUSED, REMOVED", status)
+		}
+
+		normalized = append(normalized, trimmed)
+	}
+
+	if len(normalized) == 0 {
+		return nil
+	}
+
+	// Deduplicate statuses
+	seen := make(map[string]bool)
+	var unique []string
+	for _, status := range normalized {
+		if !seen[status] {
+			seen[status] = true
+			unique = append(unique, status)
+		}
+	}
+
+	if len(unique) == 1 {
+		qb.Where(fmt.Sprintf("ad_group.status = %s", unique[0]))
+	} else {
+		qb.Where(fmt.Sprintf("ad_group.status IN (%s)", strings.Join(unique, ",")))
+	}
+	return nil
+}
+
