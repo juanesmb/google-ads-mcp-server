@@ -3,10 +3,12 @@ package app
 import (
 	"google-ads-mcp/internal/app/configs"
 	repo "google-ads-mcp/internal/infrastructure/api/listadaccounts"
+	searchcampaignsrepo "google-ads-mcp/internal/infrastructure/api/searchcampaigns"
 	"google-ads-mcp/internal/infrastructure/auth"
 	"google-ads-mcp/internal/infrastructure/http"
 	"google-ads-mcp/internal/infrastructure/log/local"
 	"google-ads-mcp/internal/tools/listadaccounts"
+	"google-ads-mcp/internal/tools/searchcampaigns"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
@@ -24,6 +26,11 @@ func initServer(configs configs.Configs) *mcp.Server {
 		Description: "List Google Ads accounts",
 	}, initListAdAccountsTool(configs).ListAdAccounts)
 
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "search_campaigns",
+		Description: "Search Google Ads campaigns",
+	}, initSearchCampaignsTool(configs).SearchCampaigns)
+
 	return server
 }
 
@@ -40,6 +47,22 @@ func initListAdAccountsTool(configs configs.Configs) *listadaccounts.Tool {
 	service := repo.NewService(httpClient, logger, tokenManager, configs.GoogleAdsConfig.CustomerID, configs.GoogleAdsConfig.DeveloperToken)
 
 	return listadaccounts.NewListAdAccountsTool(service)
+}
+
+func initSearchCampaignsTool(configs configs.Configs) *searchcampaigns.Tool {
+	httpClient := http.NewClient(nil)
+	logger := local.NewLogger()
+
+	// Use the service account JSON from Google Secret Manager
+	tokenManager, err := auth.NewTokenManagerFromServiceAccount([]byte(configs.GoogleAdsConfig.ServiceAccountJSON), auth.GoogleAdsScope)
+	if err != nil {
+		panic("failed to initialize token manager: " + err.Error())
+	}
+
+	// loginCustomerID is the manager account ID from config (used in login-customer-id header)
+	service := searchcampaignsrepo.NewService(httpClient, logger, tokenManager, configs.GoogleAdsConfig.CustomerID, configs.GoogleAdsConfig.DeveloperToken)
+
+	return searchcampaigns.NewSearchCampaignsTool(service)
 }
 
 func initImplementation() *mcp.Implementation {

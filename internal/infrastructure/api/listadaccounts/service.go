@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"strings"
 
+	"google-ads-mcp/internal/infrastructure/api/gaql"
 	"google-ads-mcp/internal/infrastructure/auth"
 	infrahttp "google-ads-mcp/internal/infrastructure/http"
 	"google-ads-mcp/internal/infrastructure/log"
@@ -111,7 +112,7 @@ func (s *Service) ListAccounts(ctx context.Context, filters Filters) (Result, er
 }
 
 func (s *Service) buildQuery(filters Filters) (string, error) {
-	qb := NewQueryBuilder("customer_client").
+	qb := gaql.NewQueryBuilder("customer_client").
 		Select(
 			"customer_client.client_customer",
 			"customer_client.descriptive_name",
