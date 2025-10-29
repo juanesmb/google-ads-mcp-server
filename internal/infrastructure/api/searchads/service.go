@@ -182,8 +182,11 @@ func (s *Service) buildQuery(filters Filters) (string, error) {
 		"metrics.cost_per_all_conversions",
 		"metrics.interactions",
 		"metrics.engagement_rate",
-		"metrics.search_impression_share",
-		"metrics.search_rank_lost_impression_share",
+		// Impression share metrics (removed - not available at ad level)
+		// Note: These metrics cause PROHIBITED_METRIC_IN_SELECT_OR_WHERE_CLAUSE errors
+		// for AD_GROUP_AD resource. They are only available at campaign/ad group level.
+		// "metrics.search_impression_share",
+		// "metrics.search_rank_lost_impression_share",
 		// Video metrics (removed - only valid for Video campaigns)
 		// Note: These fields cause UNRECOGNIZED_FIELD errors for Search campaigns
 		// "metrics.video_views",
@@ -307,9 +310,9 @@ func (s *Service) mapRowToAd(row *services.GoogleAdsRow) *Ad {
 	var conversions, conversionsValue, costPerConversion float64
 	var allConversions, allConversionsValue, allConversionsFromInteractionsRate float64
 	var costPerAllConversions, engagementRate float64
-	var searchImpressionShare, searchRankLostImpressionShare float64
-	// Note: Video metrics (videoViews, videoViewRate, averageCPV) removed - not queried
-	// as they cause UNRECOGNIZED_FIELD errors for Search campaigns
+	// Note: Video metrics and impression share metrics removed - not available/queried
+	// Video metrics cause UNRECOGNIZED_FIELD errors for Search campaigns
+	// Impression share metrics cause PROHIBITED_METRIC errors at ad level (AD_GROUP_AD)
 
 	if metricsResource != nil {
 		clicks = metricsResource.GetClicks()
@@ -327,8 +330,9 @@ func (s *Service) mapRowToAd(row *services.GoogleAdsRow) *Ad {
 		costPerAllConversions = metricsResource.GetCostPerAllConversions()
 		interactions = metricsResource.GetInteractions()
 		engagementRate = metricsResource.GetEngagementRate()
-		searchImpressionShare = metricsResource.GetSearchImpressionShare()
-		searchRankLostImpressionShare = metricsResource.GetSearchRankLostImpressionShare()
+		// Note: SearchImpressionShare and SearchRankLostImpressionShare not extracted
+		// as these metrics are not available at the ad level (AD_GROUP_AD resource)
+		// They are only available at campaign/ad group level
 	}
 
 	// Calculate conversion rate
@@ -367,8 +371,10 @@ func (s *Service) mapRowToAd(row *services.GoogleAdsRow) *Ad {
 			CostPerAllConversions:              costPerAllConversions,
 			Interactions:                       interactions,
 			EngagementRate:                     engagementRate,
-			SearchImpressionShare:              searchImpressionShare,
-			SearchRankLostImpressionShare:      searchRankLostImpressionShare,
+			// SearchImpressionShare and SearchRankLostImpressionShare set to 0
+			// These metrics are not available at ad level (AD_GROUP_AD resource)
+			SearchImpressionShare:              0,
+			SearchRankLostImpressionShare:      0,
 			// VideoViews, VideoViewRate, AverageCPV set to 0 - not queried for compatibility
 			// with Search campaigns that don't support video metrics
 			VideoViews:                         0,
