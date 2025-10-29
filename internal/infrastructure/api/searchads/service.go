@@ -158,14 +158,15 @@ func (s *Service) buildQuery(filters Filters) (string, error) {
 		"ad_group_ad.ad.responsive_search_ad.descriptions",
 		"ad_group_ad.ad.responsive_search_ad.path1",
 		"ad_group_ad.ad.responsive_search_ad.path2",
-		// Call-only ad fields
-		"ad_group_ad.ad.call_only_ad.headline1",
-		"ad_group_ad.ad.call_only_ad.headline2",
-		"ad_group_ad.ad.call_only_ad.description1",
-		"ad_group_ad.ad.call_only_ad.description2",
-		"ad_group_ad.ad.call_only_ad.phone_number",
-		"ad_group_ad.ad.call_only_ad.call_tracked",
-		"ad_group_ad.ad.call_only_ad.disable_call_conversion",
+		// Call-only ad fields (removed - only valid for specific campaign types)
+		// Note: These fields cause UNRECOGNIZED_FIELD errors for Search campaigns
+		// "ad_group_ad.ad.call_only_ad.headline1",
+		// "ad_group_ad.ad.call_only_ad.headline2",
+		// "ad_group_ad.ad.call_only_ad.description1",
+		// "ad_group_ad.ad.call_only_ad.description2",
+		// "ad_group_ad.ad.call_only_ad.phone_number",
+		// "ad_group_ad.ad.call_only_ad.call_tracked",
+		// "ad_group_ad.ad.call_only_ad.disable_call_conversion",
 		// Comprehensive metrics
 		"metrics.clicks",
 		"metrics.impressions",
@@ -183,9 +184,11 @@ func (s *Service) buildQuery(filters Filters) (string, error) {
 		"metrics.engagement_rate",
 		"metrics.search_impression_share",
 		"metrics.search_rank_lost_impression_share",
-		"metrics.video_views",
-		"metrics.video_view_rate",
-		"metrics.average_cpv",
+		// Video metrics (removed - only valid for Video campaigns)
+		// Note: These fields cause UNRECOGNIZED_FIELD errors for Search campaigns
+		// "metrics.video_views",
+		// "metrics.video_view_rate",
+		// "metrics.average_cpv",
 	}
 
 	qb := gaql.NewQueryBuilder("ad_group_ad").Select(fields...)
@@ -298,13 +301,15 @@ func (s *Service) mapRowToAd(row *services.GoogleAdsRow) *Ad {
 	}
 
 	// Map metrics
-	var clicks, impressions, interactions, videoViews int64
+	var clicks, impressions, interactions int64
 	var ctr, averageCPC float64
-	var costMicros, averageCPCInMicros, averageCPV int64
+	var costMicros, averageCPCInMicros int64
 	var conversions, conversionsValue, costPerConversion float64
 	var allConversions, allConversionsValue, allConversionsFromInteractionsRate float64
-	var costPerAllConversions, engagementRate, videoViewRate float64
+	var costPerAllConversions, engagementRate float64
 	var searchImpressionShare, searchRankLostImpressionShare float64
+	// Note: Video metrics (videoViews, videoViewRate, averageCPV) removed - not queried
+	// as they cause UNRECOGNIZED_FIELD errors for Search campaigns
 
 	if metricsResource != nil {
 		clicks = metricsResource.GetClicks()
@@ -324,10 +329,6 @@ func (s *Service) mapRowToAd(row *services.GoogleAdsRow) *Ad {
 		engagementRate = metricsResource.GetEngagementRate()
 		searchImpressionShare = metricsResource.GetSearchImpressionShare()
 		searchRankLostImpressionShare = metricsResource.GetSearchRankLostImpressionShare()
-		videoViews = metricsResource.GetVideoViews()
-		videoViewRate = metricsResource.GetVideoViewRate()
-		averageCPVValue := metricsResource.GetAverageCpv()
-		averageCPV = int64(averageCPVValue * 1000000)
 	}
 
 	// Calculate conversion rate
@@ -368,9 +369,11 @@ func (s *Service) mapRowToAd(row *services.GoogleAdsRow) *Ad {
 			EngagementRate:                     engagementRate,
 			SearchImpressionShare:              searchImpressionShare,
 			SearchRankLostImpressionShare:      searchRankLostImpressionShare,
-			VideoViews:                         videoViews,
-			VideoViewRate:                      videoViewRate,
-			AverageCPV:                        averageCPV,
+			// VideoViews, VideoViewRate, AverageCPV set to 0 - not queried for compatibility
+			// with Search campaigns that don't support video metrics
+			VideoViews:                         0,
+			VideoViewRate:                      0,
+			AverageCPV:                         0,
 		},
 	}
 
