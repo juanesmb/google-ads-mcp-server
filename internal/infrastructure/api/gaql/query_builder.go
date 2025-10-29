@@ -481,3 +481,134 @@ func (qb *QueryBuilder) WhereAdGroupStatus(statuses []string) error {
 	return nil
 }
 
+// WhereAdGroupAdStatus adds a WHERE clause to filter by ad_group_ad.status
+// Valid statuses: ENABLED, PAUSED, REMOVED, PENDING, DISAPPROVED
+func (qb *QueryBuilder) WhereAdGroupAdStatus(statuses []string) error {
+	if len(statuses) == 0 {
+		return nil
+	}
+
+	validStatuses := map[string]bool{
+		"ENABLED":     true,
+		"PAUSED":      true,
+		"REMOVED":     true,
+		"PENDING":     true,
+		"DISAPPROVED": true,
+	}
+
+	normalized := make([]string, 0, len(statuses))
+	for _, status := range statuses {
+		trimmed := strings.TrimSpace(strings.ToUpper(status))
+		if trimmed == "" {
+			continue
+		}
+
+		if !validStatuses[trimmed] {
+			return fmt.Errorf("invalid ad_group_ad status %q: must be one of ENABLED, PAUSED, REMOVED, PENDING, DISAPPROVED", status)
+		}
+
+		normalized = append(normalized, trimmed)
+	}
+
+	if len(normalized) == 0 {
+		return nil
+	}
+
+	// Deduplicate statuses
+	seen := make(map[string]bool)
+	var unique []string
+	for _, status := range normalized {
+		if !seen[status] {
+			seen[status] = true
+			unique = append(unique, status)
+		}
+	}
+
+	if len(unique) == 1 {
+		qb.Where(fmt.Sprintf("ad_group_ad.status = '%s'", unique[0]))
+	} else {
+		quoted := make([]string, len(unique))
+		for i, s := range unique {
+			quoted[i] = fmt.Sprintf("'%s'", s)
+		}
+		qb.Where(fmt.Sprintf("ad_group_ad.status IN (%s)", strings.Join(quoted, ",")))
+	}
+	return nil
+}
+
+// WhereAdTypes adds a WHERE clause to filter by ad_group_ad.ad.type
+// Valid ad types: EXPANDED_TEXT_AD, RESPONSIVE_SEARCH_AD, CALL_ONLY_AD, RESPONSIVE_DISPLAY_AD,
+// EXPANDED_DYNAMIC_SEARCH_AD, HOTEL_AD, SHOPPING_SMART_AD, SHOPPING_PRODUCT_AD, VIDEO_RESPONSIVE_AD,
+// VIDEO_NON_SKIPPABLE_IN_STREAM_AD, VIDEO_OUTSTREAM_AD, VIDEO_TRUEVIEW_DISCOVERY_AD, VIDEO_TRUEVIEW_IN_STREAM_AD,
+// APP_ENGAGEMENT_AD, APP_PRE_REGISTRATION_AD, LOCAL_AD, MULTI_ASSET_RESPONSIVE_DISPLAY_AD, HTML5_UPLOAD_AD, etc.
+func (qb *QueryBuilder) WhereAdTypes(adTypes []string) error {
+	if len(adTypes) == 0 {
+		return nil
+	}
+
+	// Common ad types - this is a subset, API accepts many more
+	validAdTypes := map[string]bool{
+		"EXPANDED_TEXT_AD":                        true,
+		"RESPONSIVE_SEARCH_AD":                    true,
+		"CALL_ONLY_AD":                            true,
+		"RESPONSIVE_DISPLAY_AD":                   true,
+		"EXPANDED_DYNAMIC_SEARCH_AD":              true,
+		"HOTEL_AD":                                true,
+		"SHOPPING_SMART_AD":                       true,
+		"SHOPPING_PRODUCT_AD":                     true,
+		"VIDEO_RESPONSIVE_AD":                     true,
+		"VIDEO_NON_SKIPPABLE_IN_STREAM_AD":        true,
+		"VIDEO_OUTSTREAM_AD":                      true,
+		"VIDEO_TRUEVIEW_DISCOVERY_AD":             true,
+		"VIDEO_TRUEVIEW_IN_STREAM_AD":             true,
+		"APP_ENGAGEMENT_AD":                       true,
+		"APP_PRE_REGISTRATION_AD":                 true,
+		"LOCAL_AD":                                true,
+		"MULTI_ASSET_RESPONSIVE_DISPLAY_AD":       true,
+		"HTML5_UPLOAD_AD":                         true,
+		"VIDEO_BUMPER_AD":                         true,
+	}
+
+	normalized := make([]string, 0, len(adTypes))
+	for _, adType := range adTypes {
+		trimmed := strings.TrimSpace(strings.ToUpper(adType))
+		if trimmed == "" {
+			continue
+		}
+
+		// Validate against known types, but also allow unknown types (API will validate)
+		// This allows for future ad types without code changes
+		if !validAdTypes[trimmed] {
+			// Log but don't reject - let API validate
+			normalized = append(normalized, trimmed)
+		} else {
+			normalized = append(normalized, trimmed)
+		}
+	}
+
+	if len(normalized) == 0 {
+		return nil
+	}
+
+	// Deduplicate ad types
+	seen := make(map[string]bool)
+	var unique []string
+	for _, adType := range normalized {
+		if !seen[adType] {
+			seen[adType] = true
+			unique = append(unique, adType)
+		}
+	}
+
+	if len(unique) == 1 {
+		qb.Where(fmt.Sprintf("ad_group_ad.ad.type = '%s'", unique[0]))
+	} else {
+		quoted := make([]string, len(unique))
+		for i, t := range unique {
+			quoted[i] = fmt.Sprintf("'%s'", t)
+		}
+		qb.Where(fmt.Sprintf("ad_group_ad.ad.type IN (%s)", strings.Join(quoted, ",")))
+	}
+	return nil
+}
+

@@ -4,12 +4,14 @@ import (
 	"google-ads-mcp/internal/app/configs"
 	repo "google-ads-mcp/internal/infrastructure/api/listadaccounts"
 	searchadgroupsrepo "google-ads-mcp/internal/infrastructure/api/searchadgroups"
+	searchadsrepo "google-ads-mcp/internal/infrastructure/api/searchads"
 	searchcampaignsrepo "google-ads-mcp/internal/infrastructure/api/searchcampaigns"
 	"google-ads-mcp/internal/infrastructure/auth"
 	"google-ads-mcp/internal/infrastructure/http"
 	"google-ads-mcp/internal/infrastructure/log/local"
 	"google-ads-mcp/internal/tools/listadaccounts"
 	"google-ads-mcp/internal/tools/searchadgroups"
+	"google-ads-mcp/internal/tools/searchads"
 	"google-ads-mcp/internal/tools/searchcampaigns"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -37,6 +39,11 @@ func initServer(configs configs.Configs) *mcp.Server {
 		Name:        "search_ad_groups",
 		Description: "Search Google Ads ad groups",
 	}, initSearchAdGroupsTool(configs).SearchAdGroups)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "search_ads",
+		Description: "Search Google Ads",
+	}, initSearchAdsTool(configs).SearchAds)
 
 	return server
 }
@@ -86,6 +93,22 @@ func initSearchAdGroupsTool(configs configs.Configs) *searchadgroups.Tool {
 	service := searchadgroupsrepo.NewService(httpClient, logger, tokenManager, configs.GoogleAdsConfig.CustomerID, configs.GoogleAdsConfig.DeveloperToken)
 
 	return searchadgroups.NewSearchAdGroupsTool(service)
+}
+
+func initSearchAdsTool(configs configs.Configs) *searchads.Tool {
+	httpClient := http.NewClient(nil)
+	logger := local.NewLogger()
+
+	// Use the service account JSON from Google Secret Manager
+	tokenManager, err := auth.NewTokenManagerFromServiceAccount([]byte(configs.GoogleAdsConfig.ServiceAccountJSON), auth.GoogleAdsScope)
+	if err != nil {
+		panic("failed to initialize token manager: " + err.Error())
+	}
+
+	// loginCustomerID is the manager account ID from config (used in login-customer-id header)
+	service := searchadsrepo.NewService(httpClient, logger, tokenManager, configs.GoogleAdsConfig.CustomerID, configs.GoogleAdsConfig.DeveloperToken)
+
+	return searchads.NewSearchAdsTool(service)
 }
 
 func initImplementation() *mcp.Implementation {
