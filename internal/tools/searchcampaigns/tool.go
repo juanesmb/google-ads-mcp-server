@@ -92,7 +92,6 @@ func mapCampaigns(campaigns []searchcampaigns.Campaign) []CampaignOutput {
 				AllConversions:                     camp.Metrics.AllConversions,
 				AllConversionsValue:                camp.Metrics.AllConversionsValue,
 				AllConversionsFromInteractionsRate: camp.Metrics.AllConversionsFromInteractionsRate,
-				AllConversionsValuePerCost:         camp.Metrics.AllConversionsValuePerCost,
 				CostPerAllConversions:              camp.Metrics.CostPerAllConversions,
 				Interactions:                       camp.Metrics.Interactions,
 				EngagementRate:                     camp.Metrics.EngagementRate,

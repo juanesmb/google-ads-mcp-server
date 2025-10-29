@@ -27,7 +27,6 @@ type CampaignMetrics struct {
 	AllConversions                     float64 // All conversions (including estimated)
 	AllConversionsValue                float64 // Total value of all conversions
 	AllConversionsFromInteractionsRate float64 // All conversions rate from interactions
-	AllConversionsValuePerCost         float64 // All conversions value per cost
 	CostPerAllConversions              float64 // Cost per all conversions in currency units
 	Interactions                       int64   // Total interactions (clicks + engagements)
 	EngagementRate                     float64 // Engagement rate (percentage)

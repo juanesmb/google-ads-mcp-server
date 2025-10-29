@@ -146,7 +146,6 @@ func (s *Service) buildQuery(filters Filters) (string, error) {
 		"metrics.all_conversions",
 		"metrics.all_conversions_value",
 		"metrics.all_conversions_from_interactions_rate",
-		"metrics.all_conversions_value_per_cost",
 		"metrics.cost_per_all_conversions",
 		"metrics.interactions",
 		"metrics.engagement_rate",
@@ -222,7 +221,7 @@ func (s *Service) mapRowToCampaign(row *services.GoogleAdsRow) *Campaign {
 	var costMicros int64
 	var conversions, conversionsValue, costPerConversion float64
 	var allConversions, allConversionsValue, allConversionsFromInteractionsRate float64
-	var allConversionsValuePerCost, costPerAllConversions float64
+	var costPerAllConversions float64
 	var engagementRate, searchImpressionShare, searchRankLostImpressionShare float64
 
 	if metricsResource != nil {
@@ -238,7 +237,6 @@ func (s *Service) mapRowToCampaign(row *services.GoogleAdsRow) *Campaign {
 		allConversions = metricsResource.GetAllConversions()
 		allConversionsValue = metricsResource.GetAllConversionsValue()
 		allConversionsFromInteractionsRate = metricsResource.GetAllConversionsFromInteractionsRate()
-		allConversionsValuePerCost = metricsResource.GetAllConversionsValuePerCost()
 		costPerAllConversions = metricsResource.GetCostPerAllConversions()
 		interactions = metricsResource.GetInteractions()
 		engagementRate = metricsResource.GetEngagementRate()
@@ -274,7 +272,6 @@ func (s *Service) mapRowToCampaign(row *services.GoogleAdsRow) *Campaign {
 			AllConversions:                     allConversions,
 			AllConversionsValue:                allConversionsValue,
 			AllConversionsFromInteractionsRate: allConversionsFromInteractionsRate,
-			AllConversionsValuePerCost:         allConversionsValuePerCost,
 			CostPerAllConversions:              costPerAllConversions,
 			Interactions:                       interactions,
 			EngagementRate:                     engagementRate,

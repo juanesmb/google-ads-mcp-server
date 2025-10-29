@@ -34,7 +34,6 @@ type CampaignMetrics struct {
 	AllConversions                     float64 `json:"all_conversions"`
 	AllConversionsValue                float64 `json:"all_conversions_value"`
 	AllConversionsFromInteractionsRate float64 `json:"all_conversions_from_interactions_rate"`
-	AllConversionsValuePerCost         float64 `json:"all_conversions_value_per_cost"`
 	CostPerAllConversions              float64 `json:"cost_per_all_conversions"`
 	Interactions                       int64   `json:"interactions"`
 	EngagementRate                     float64 `json:"engagement_rate"`
